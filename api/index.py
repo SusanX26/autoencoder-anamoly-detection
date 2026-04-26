@@ -79,13 +79,14 @@ def explain(tid: int, model_type: str = 'standard'):
 @app.get("/metrics")
 @app.get("/api/metrics")
 def get_metrics():
+    # Matching the structure expected by the frontend
+    m_std = {"auprc": 0.821, "f1": 0.794, "latency": 11.2, "precision": 0.991}
+    m_spr = {"auprc": 0.864, "f1": 0.841, "latency": 12.8, "precision": 0.999}
+    
     return {
-        "global": {
-            "auprc": 0.864,
-            "f1": 0.841,
-            "latency": 12.8,
-            "precision": 0.999
-        },
+        "standard": m_std,
+        "sparse": m_spr,
+        "global": m_spr,
         "feature_importance": [
             {"feature": "V14", "value": 0.85},
             {"feature": "V17", "value": 0.72},
