@@ -78,22 +78,32 @@ def explain(tid: int, model_type: str = 'standard'):
     return explanation
 
 def get_mock_shap(data):
-    # Make SHAP more dynamic based on the feature values
     features = [f'V{i}' for i in range(1, 29)] + ['Amount']
     results = []
     
-    # Use the input data to influence the 'importance'
-    data_sum = np.abs(data.values[0]) if len(data) > 0 else np.zeros(len(features))
+    # Get values and handle scaling for "Amount" which can be very large
+    raw_vals = data.values[0] if len(data) > 0 else np.zeros(len(features))
     
     for i, feat in enumerate(features):
-        # Contribution can be positive or negative
-        # Fraudulent patterns tend to have extreme feature contributions
-        base_val = data_sum[i] * 0.2 if i < len(data_sum) else 0.1
-        noise = np.random.uniform(-0.1, 0.1)
+        val = raw_vals[i]
+        # Scale down Amount for the visualization so it doesn't dominate
+        if feat == 'Amount':
+            val = val / 100.0
+            
+        # Create a realistic "contribution"
+        # If the value is far from 0, it contributes more to the anomaly
+        contribution = val * np.random.uniform(0.1, 0.4)
+        
+        # Add some random "safe" (negative) features for variety
+        if np.random.random() > 0.7:
+            contribution = -abs(contribution) * 0.5
+            
         results.append({
             "feature": feat,
-            "value": float(base_val + noise)
+            "value": float(contribution)
         })
+        
+    # Sort by absolute impact and take top 10
     return sorted(results, key=lambda x: abs(x['value']), reverse=True)[:10]
 
 @app.get("/metrics")
