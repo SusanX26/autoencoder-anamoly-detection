@@ -1,0 +1,7 @@
+fastapi
+pandas
+numpy
+onnxruntime
+joblib
+python-multipart
+scikit-learn
