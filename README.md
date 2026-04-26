@@ -177,6 +177,21 @@ See `client_submission_guide.md` and `FraudSense_AI_Research_Report.docx` for fu
 
 ---
 
+## 🌐 Deployment
+
+### Frontend (Vercel)
+1.  Connect your GitHub repository to **Vercel**.
+2.  Set the **Root Directory** to `dashboard/`.
+3.  Set the **Framework Preset** to `Vite`.
+4.  Add the environment variable `VITE_API_URL` pointing to your live API.
+
+### Backend (Local / Render)
+Due to the size of AI libraries (Torch/SHAP), the backend is best run:
+- **Locally**: Using the provided `START_FRAUDSENSE.bat`.
+- **Render/Railway**: Deploy the root folder as a Python web service.
+
+---
+
 ## 🛑 Troubleshooting
 
 | Problem | Solution |

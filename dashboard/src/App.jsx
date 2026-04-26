@@ -10,7 +10,7 @@ import {
 } from 'recharts';
 import axios from 'axios';
 
-const API_BASE = "http://localhost:8000";
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 const formatNum = (val, decimals = 1) => {
   if (val === null || val === undefined || isNaN(val)) return "0.0";
