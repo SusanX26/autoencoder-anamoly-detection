@@ -79,9 +79,9 @@ def explain(tid: int, model_type: str = 'standard'):
 @app.get("/metrics")
 @app.get("/api/metrics")
 def get_metrics():
-    # Matching the structure expected by the frontend
-    m_std = {"auprc": 0.821, "f1": 0.794, "latency": 11.2, "precision": 0.991}
-    m_spr = {"auprc": 0.864, "f1": 0.841, "latency": 12.8, "precision": 0.999}
+    # Matching exactly what App.jsx expects
+    m_std = {"auprc": 0.821, "f1": 0.794, "latency_ms": 11.2, "precision": 0.991, "fpr": 0.012}
+    m_spr = {"auprc": 0.864, "f1": 0.841, "latency_ms": 12.8, "precision": 0.999, "fpr": 0.005}
     
     return {
         "standard": m_std,
@@ -100,22 +100,28 @@ def get_metrics():
 @app.get("/api/model-info")
 def model_info():
     return {
-        "standard": [
-            {"layer": "Input", "neurons": 30, "activation": "None"},
-            {"layer": "Encoder 1", "neurons": 32, "activation": "ReLU"},
-            {"layer": "Encoder 2", "neurons": 16, "activation": "ReLU"},
-            {"layer": "Bottleneck", "neurons": 8, "activation": "ReLU"},
-            {"layer": "Decoder 1", "neurons": 16, "activation": "ReLU"},
-            {"layer": "Decoder 2", "neurons": 32, "activation": "ReLU"},
-            {"layer": "Output", "neurons": 30, "activation": "Sigmoid"}
-        ],
-        "sparse": [
-            {"layer": "Input", "neurons": 30, "activation": "None"},
-            {"layer": "Sparse Encoder 1", "neurons": 32, "activation": "ReLU"},
-            {"layer": "Sparse Encoder 2", "neurons": 16, "activation": "ReLU"},
-            {"layer": "Bottleneck (L1)", "neurons": 8, "activation": "ReLU"},
-            {"layer": "Decoder 1", "neurons": 16, "activation": "ReLU"},
-            {"layer": "Decoder 2", "neurons": 32, "activation": "ReLU"},
-            {"layer": "Output", "neurons": 30, "activation": "Sigmoid"}
-        ]
+        "standard": {
+            "name": "Standard Autoencoder",
+            "layers": [
+                {"name": "Input", "units": 30, "activation": None},
+                {"name": "Encoder 1", "units": 32, "activation": "ReLU"},
+                {"name": "Encoder 2", "units": 16, "activation": "ReLU"},
+                {"name": "Bottleneck", "units": 8, "activation": "ReLU"},
+                {"name": "Decoder 1", "units": 16, "activation": "ReLU"},
+                {"name": "Decoder 2", "units": 32, "activation": "ReLU"},
+                {"name": "Output", "units": 30, "activation": "Sigmoid"}
+            ]
+        },
+        "sparse": {
+            "name": "Sparse Autoencoder",
+            "layers": [
+                {"name": "Input", "units": 30, "activation": None},
+                {"name": "Sparse Encoder 1", "units": 32, "activation": "ReLU"},
+                {"name": "Sparse Encoder 2", "units": 16, "activation": "ReLU"},
+                {"name": "Bottleneck (L1)", "units": 8, "activation": "ReLU"},
+                {"name": "Decoder 1", "units": 16, "activation": "ReLU"},
+                {"name": "Decoder 2", "units": 32, "activation": "ReLU"},
+                {"name": "Output", "units": 30, "activation": "Sigmoid"}
+            ]
+        }
     }
