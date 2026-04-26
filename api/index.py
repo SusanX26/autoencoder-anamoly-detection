@@ -2,6 +2,7 @@ from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List
 import pandas as pd
+import numpy as np
 import os
 import sys
 
