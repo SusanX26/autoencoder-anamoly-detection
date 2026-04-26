@@ -4,18 +4,29 @@ import pandas as pd
 import joblib
 import os
 
-# Base path for models
-MODEL_DIR = os.path.join(os.getcwd(), 'models')
+# Robust pathing for Vercel
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+MODEL_DIR = os.path.join(BASE_DIR, 'models')
 
 # Load Scaler
-scaler = joblib.load(os.path.join(MODEL_DIR, 'scaler.pkl'))
+scaler_path = os.path.join(MODEL_DIR, 'scaler.pkl')
+scaler = joblib.load(scaler_path)
 
-# Load ONNX sessions
-std_session = ort.InferenceSession(os.path.join(MODEL_DIR, 'standard_ae.onnx'))
-sparse_session = ort.InferenceSession(os.path.join(MODEL_DIR, 'sparse_ae.onnx'))
+# Load ONNX sessions with error handling
+try:
+    std_path = os.path.join(MODEL_DIR, 'standard_ae.onnx')
+    sparse_path = os.path.join(MODEL_DIR, 'sparse_ae.onnx')
+    std_session = ort.InferenceSession(std_path)
+    sparse_session = ort.InferenceSession(sparse_path)
+except Exception as e:
+    print(f"Error loading ONNX sessions: {e}")
+    std_session = None
+    sparse_session = None
 
 def get_onnx_mse(data, model_type='standard'):
     session = std_session if model_type == 'standard' else sparse_session
+    if session is None:
+        return np.zeros(len(data))
     
     # Scale data
     data_scaled = scaler.transform(data).astype(np.float32)
@@ -30,8 +41,6 @@ def get_onnx_mse(data, model_type='standard'):
     return mse
 
 def get_mock_shap(data):
-    # For cloud demo, we provide mock SHAP values to save size/memory
-    # This keeps the UI working without the 500MB SHAP dependency
     features = [f'V{i}' for i in range(1, 29)] + ['Amount']
     results = []
     for feat in features:

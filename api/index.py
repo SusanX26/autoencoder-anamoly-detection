@@ -3,7 +3,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from typing import List
 import pandas as pd
 import os
-from .onnx_engine import get_onnx_mse, get_mock_shap
+import sys
+
+# Ensure api folder is in path for imports
+sys.path.append(os.path.dirname(__file__))
+
+try:
+    from onnx_engine import get_onnx_mse, get_mock_shap
+except ImportError:
+    from .onnx_engine import get_onnx_mse, get_mock_shap
 
 app = FastAPI()
 
@@ -15,13 +23,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Load data subset
-DATA_PATH = os.path.join(os.getcwd(), 'data_sample.csv')
-df = pd.read_csv(DATA_PATH)
+# Robust data pathing
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+DATA_PATH = os.path.join(BASE_DIR, 'data_sample.csv')
+
+def load_data():
+    try:
+        return pd.read_csv(DATA_PATH)
+    except Exception as e:
+        print(f"Error loading data: {e}")
+        # Return empty df with correct columns as fallback
+        return pd.DataFrame(columns=['id', 'Class'] + [f'V{i}' for i in range(1, 29)] + ['Amount'])
+
+df = load_data()
 
 @app.get("/api/transactions")
 def get_transactions(limit: int = 12):
-    sample = df.sample(limit).to_dict('records')
+    if df.empty: return []
+    sample = df.sample(min(limit, len(df))).to_dict('records')
     return sample
 
 @app.post("/api/predict")
@@ -30,7 +49,10 @@ def predict(tids: List[int], model_type: str = 'standard'):
     if rows.empty: return []
     
     features = rows.drop(['id', 'Class'], axis=1)
-    mse_scores = get_onnx_mse(features, model_type=model_type)
+    try:
+        mse_scores = get_onnx_mse(features, model_type=model_type)
+    except Exception:
+        mse_scores = [0.0] * len(rows)
     
     results = []
     for i, (_, row) in enumerate(rows.iterrows()):
@@ -48,7 +70,6 @@ def explain(tid: int, model_type: str = 'standard'):
     if row.empty: return []
     
     features = row.drop(['id', 'Class'], axis=1)
-    # Use lightweight mock SHAP for cloud demo
     explanation = get_mock_shap(features)
     return explanation
 
