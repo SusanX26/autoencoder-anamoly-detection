@@ -66,35 +66,24 @@ echo [OK] Python dependencies installed.
 :: STEP 4: Check for model files
 :: -----------------------------------------------
 echo [4/6] Checking for trained model files...
-if not exist "autoencoder_fraud.onnx" (
-    echo [INFO] Model not found. Checking for dataset...
-    if not exist "creditcard_2023.csv\creditcard_2023.csv" (
-        if exist "creditcard_2023.csv.zip" (
-            echo [INFO] Extracting dataset zip...
-            powershell -command "Expand-Archive -Path 'creditcard_2023.csv.zip' -DestinationPath '.' -Force"
-            echo [OK] Dataset extracted.
-        ) else (
-            echo.
+if not exist "models\standard_ae.onnx" (
+    echo [INFO] Models not found. Checking for dataset...
+    if not exist "temp_data.csv" (
+        if not exist "creditcard_2023.csv\creditcard_2023.csv" (
             echo [WARNING] Dataset file not found!
-            echo           Please place creditcard_2023.csv.zip in this folder.
-            echo           Download from: https://www.kaggle.com/datasets/nelgiriyewithana/credit-card-fraud-detection-dataset-2023
-            echo.
-            echo           If you have the pre-trained model files (autoencoder_fraud.onnx,
-            echo           autoencoder_fraud.pth, scaler.pkl), place them in this folder.
-            echo.
             pause
         )
     )
-    echo [INFO] Training the model (this takes 3-5 minutes)...
+    echo [INFO] Training both Standard and Sparse models (this takes 3-5 minutes)...
     python fraud_detector_engine.py
     if %errorlevel% neq 0 (
-        echo [ERROR] Model training failed. Check the dataset path.
+        echo [ERROR] Model training failed.
         pause
         exit /b 1
     )
-    echo [OK] Model trained and ONNX model exported.
+    echo [OK] Both models trained and exported.
 ) else (
-    echo [OK] Pre-trained model found. Skipping training.
+    echo [OK] Multi-model system found. Skipping training.
 )
 
 :: -----------------------------------------------
