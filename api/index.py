@@ -37,12 +37,14 @@ def load_data():
 
 df = load_data()
 
+@app.get("/transactions")
 @app.get("/api/transactions")
 def get_transactions(limit: int = 12):
     if df.empty: return []
     sample = df.sample(min(limit, len(df))).to_dict('records')
     return sample
 
+@app.post("/predict")
 @app.post("/api/predict")
 def predict(tids: List[int], model_type: str = 'standard'):
     rows = df[df['id'].isin(tids)]
@@ -64,6 +66,7 @@ def predict(tids: List[int], model_type: str = 'standard'):
         })
     return results
 
+@app.post("/explain")
 @app.post("/api/explain")
 def explain(tid: int, model_type: str = 'standard'):
     row = df[df['id'] == tid]
@@ -73,6 +76,7 @@ def explain(tid: int, model_type: str = 'standard'):
     explanation = get_mock_shap(features)
     return explanation
 
+@app.get("/metrics")
 @app.get("/api/metrics")
 def get_metrics():
     return {
@@ -91,6 +95,7 @@ def get_metrics():
         ]
     }
 
+@app.get("/model-info")
 @app.get("/api/model-info")
 def model_info():
     return {
