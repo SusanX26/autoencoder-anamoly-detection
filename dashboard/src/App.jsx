@@ -10,8 +10,7 @@ import {
 } from 'recharts';
 import axios from 'axios';
 
-const API_BASE = import.meta.env.VITE_API_URL || 
-  (typeof window !== 'undefined' && window.location.hostname !== 'localhost' ? '/api' : "http://localhost:8000");
+const API_BASE = import.meta.env.VITE_API_URL || "/api";
 
 const formatNum = (val, decimals = 1) => {
   if (val === null || val === undefined || isNaN(val)) return "0.0";
@@ -415,10 +414,10 @@ const ComparisonView = ({ metrics, modelInfo, onClose }) => {
               </tr>
             </thead>
             <tbody className="text-sm font-bold">
-              <TableLine label="Model Precision (AUPRC)" std={formatNum(metrics.standard.auprc*100, 1)+'%'} spr={formatNum(metrics.sparse.auprc*100, 1)+'%'} result="Sparse (+4.3%)" highlight />
-              <TableLine label="Balanced F1 Accuracy" std={formatNum(metrics.standard.f1*100, 1)+'%'} spr={formatNum(metrics.sparse.f1*100, 1)+'%'} result="Sparse (+4.7%)" highlight />
-              <TableLine label="False Positive (FPR)" std={formatNum(metrics.standard.fpr*100, 2)+'%'} spr={formatNum(metrics.sparse.fpr*100, 2)+'%'} result="Sparse (-56%)" highlight />
-              <TableLine label="System Latency" std={formatNum(metrics.standard.latency_ms, 1)+'ms'} spr={formatNum(metrics.sparse.latency_ms, 1)+'ms'} result="Standard (Faster)" />
+              <TableLine label="Model Precision (AUPRC)" std={formatNum(metrics?.standard?.auprc*100, 1)+'%'} spr={formatNum(metrics?.sparse?.auprc*100, 1)+'%'} result="Sparse (+4.3%)" highlight />
+              <TableLine label="Balanced F1 Accuracy" std={formatNum(metrics?.standard?.f1*100, 1)+'%'} spr={formatNum(metrics?.sparse?.f1*100, 1)+'%'} result="Sparse (+4.7%)" highlight />
+              <TableLine label="False Positive (FPR)" std={formatNum(metrics?.standard?.fpr*100, 2)+'%'} spr={formatNum(metrics?.sparse?.fpr*100, 2)+'%'} result="Sparse (-56%)" highlight />
+              <TableLine label="System Latency" std={formatNum(metrics?.standard?.latency_ms, 1)+'ms'} spr={formatNum(metrics?.sparse?.latency_ms, 1)+'ms'} result="Standard (Faster)" />
               <TableLine label="Bottleneck Regularization" std="None" spr="L1 Penalty" result="Feature Selection" />
               <TableLine label="Robustness to Noise" std="Moderate" spr="High" result="Optimal for Fraud" />
             </tbody>
