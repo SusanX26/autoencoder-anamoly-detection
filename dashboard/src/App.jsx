@@ -159,7 +159,7 @@ const Dashboard = () => {
                 <div>
                    <p className="text-[10px] text-slate-400 uppercase font-bold tracking-tighter">Lat. Index</p>
                    <p className="text-lg font-black text-slate-800 font-mono">
-                     {metrics?.[modelType]?.latency_ms ? formatNum(metrics[modelType].latency_ms, 1) : '--'}<span className="text-sm font-normal ml-0.5">ms</span>
+                     {metrics?.[modelType]?.latency_ms ? formatNum(metrics[modelType].latency_ms, 2) : '--'}<span className="text-sm font-normal ml-0.5">ms</span>
                    </p>
                 </div>
                 <div className="text-right">
@@ -323,7 +323,7 @@ const ComparisonView = ({ metrics, modelInfo, onClose }) => {
                </div>
                <div className="flex justify-between text-[11px] font-bold uppercase tracking-tight border-b border-slate-100 pb-2">
                   <span className="text-slate-400">Lat. Index</span>
-                  <span className={m === 'sparse' ? 'text-white' : 'text-slate-900'}>{formatNum(metrics[m].latency_ms, 1)}ms</span>
+                  <span className={m === 'sparse' ? 'text-white' : 'text-slate-900'}>{formatNum(metrics[m].latency_ms, 2)}ms</span>
                </div>
             </div>
 
