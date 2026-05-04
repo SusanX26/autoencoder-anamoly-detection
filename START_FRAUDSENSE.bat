@@ -66,24 +66,23 @@ echo [OK] Python dependencies installed.
 :: STEP 4: Check for model files
 :: -----------------------------------------------
 echo [4/6] Checking for trained model files...
-if not exist "models\standard_ae.onnx" (
+if not exist "models\denoising_ae.onnx" (
     echo [INFO] Models not found. Checking for dataset...
-    if not exist "temp_data.csv" (
-        if not exist "creditcard_2023.csv\creditcard_2023.csv" (
-            echo [WARNING] Dataset file not found!
-            pause
-        )
+    if not exist "creditcard.csv" (
+        echo [WARNING] creditcard.csv (Original Imbalanced Dataset) not found!
+        pause
     )
-    echo [INFO] Training both Standard and Sparse models (this takes 3-5 minutes)...
+    echo [INFO] Training Multi-Model Suite (Standard, Sparse, Denoising)...
+    echo [INFO] This takes about 3-5 minutes on this dataset...
     python fraud_detector_engine.py
     if %errorlevel% neq 0 (
         echo [ERROR] Model training failed.
         pause
         exit /b 1
     )
-    echo [OK] Both models trained and exported.
+    echo [OK] All 3 models trained and exported to ONNX.
 ) else (
-    echo [OK] Multi-model system found. Skipping training.
+    echo [OK] Enterprise Multi-Model system found. skipping training.
 )
 
 :: -----------------------------------------------
