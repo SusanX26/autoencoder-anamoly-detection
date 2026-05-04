@@ -42,8 +42,24 @@ df = load_data()
 @app.get("/api/transactions")
 def get_transactions(limit: int = 12):
     if df.empty: return []
-    sample = df.sample(min(limit, len(df))).to_dict('records')
-    return sample
+    
+    # Guarantee at least 1-2 anomalies for the UI Demonstration
+    if 'Class' in df.columns:
+        frauds = df[df['Class'] == 1]
+        normals = df[df['Class'] == 0]
+        
+        n_frauds = min(2, len(frauds))
+        n_normals = min(limit - n_frauds, len(normals))
+        
+        f_sample = frauds.sample(n_frauds) if n_frauds > 0 else pd.DataFrame()
+        n_sample = normals.sample(n_normals) if n_normals > 0 else pd.DataFrame()
+        
+        # Combine and shuffle
+        sample_df = pd.concat([f_sample, n_sample]).sample(frac=1).reset_index(drop=True)
+        return sample_df.to_dict('records')
+    else:
+        sample = df.sample(min(limit, len(df))).to_dict('records')
+        return sample
 
 @app.post("/predict")
 @app.post("/api/predict")
@@ -56,13 +72,16 @@ def predict(tids: List[int], model_type: str = 'standard'):
     except Exception:
         mse_scores = [0.0] * len(rows)
     
+    thresholds = {'standard': 0.03, 'sparse': 0.02, 'denoising': 0.025}
+    threshold = thresholds.get(model_type, 0.03)
+
     results = []
     for i, (_, row) in enumerate(rows.iterrows()):
         score = float(mse_scores[i])
         results.append({
             "id": int(row['id']),
             "score": score,
-            "is_fraud": bool(score >= 0.035)
+            "is_fraud": bool(score >= threshold)
         })
     return results
 
