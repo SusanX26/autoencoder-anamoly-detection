@@ -129,10 +129,29 @@ const Dashboard = () => {
       <aside className="w-72 flex flex-col glass-sidebar shadow-2xl z-30">
         <div className="p-8 flex items-center space-x-3 border-b border-white/20">
           <motion.div 
-            whileHover={{ rotate: 180 }}
-            className="p-2 bg-gradient-to-br from-indigo-600 to-indigo-800 rounded-xl shadow-lg shadow-indigo-200"
+            whileHover={{ scale: 1.1, rotate: 5 }}
+            whileTap={{ scale: 0.95 }}
+            className="relative p-2.5 bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl shadow-lg shadow-orange-200"
           >
-            <ShieldAlert className="text-white w-6 h-6" />
+            {/* Custom Fingerprint/Scan SVG Icon */}
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white">
+              <path d="M12 1C7.589 1 4 4.589 4 9" stroke="white" strokeWidth="1.8" strokeLinecap="round"/>
+              <path d="M20 9C20 4.589 16.411 1 12 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeOpacity="0.6"/>
+              <path d="M6 12C6 8.686 8.686 6 12 6C15.314 6 18 8.686 18 12" stroke="white" strokeWidth="1.8" strokeLinecap="round"/>
+              <path d="M8 14.5C8 12.015 9.791 10 12 10" stroke="white" strokeWidth="1.8" strokeLinecap="round"/>
+              <path d="M16 14.5C16 12.015 14.209 10 12 10" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeOpacity="0.6"/>
+              <path d="M10 17C10 15.895 10.895 15 12 15C13.105 15 14 15.895 14 17" stroke="white" strokeWidth="1.8" strokeLinecap="round"/>
+              <circle cx="12" cy="19" r="1.2" fill="white"/>
+              <path d="M4 17C4 19 5 21 7 22" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeOpacity="0.5"/>
+              <path d="M20 17C20 19 19 21 17 22" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeOpacity="0.5"/>
+            </svg>
+            {/* Animated pulse ring */}
+            <motion.div
+              animate={{ scale: [1, 1.4, 1], opacity: [0.5, 0, 0.5] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="absolute inset-0 rounded-2xl bg-orange-400"
+              style={{ zIndex: -1 }}
+            />
           </motion.div>
           <div>
             <h1 className="text-xl font-black tracking-tight text-slate-900 leading-none flex items-center">
