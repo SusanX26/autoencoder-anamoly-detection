@@ -62,7 +62,7 @@ def predict(tids: List[int], model_type: str = 'standard'):
         results.append({
             "id": int(row['id']),
             "score": score,
-            "is_anomaly": bool(score > 0.05)
+            "is_fraud": bool(score >= 0.035)
         })
     return results
 
