@@ -10,9 +10,9 @@ import sys
 sys.path.append(os.path.dirname(__file__))
 
 try:
-    from onnx_engine import get_onnx_mse, get_mock_shap
+    from onnx_engine import get_onnx_mse
 except ImportError:
-    from .onnx_engine import get_onnx_mse, get_mock_shap
+    from .onnx_engine import get_onnx_mse
 
 app = FastAPI()
 
