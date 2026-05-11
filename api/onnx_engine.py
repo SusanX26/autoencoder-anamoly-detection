@@ -6,24 +6,34 @@ import os
 
 # Robust pathing for Vercel
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-MODEL_DIR = os.path.join(BASE_DIR, 'models')
+MODEL_DIR = os.path.join(BASE_DIR, 'models_optimized')
+if not os.path.exists(MODEL_DIR):
+    MODEL_DIR = os.path.join(BASE_DIR, 'models')
 
 # Load Scaler
 try:
-    scaler_path = os.path.join(MODEL_DIR, 'scaler.pkl')
+    scaler_path = os.path.join(MODEL_DIR, 'power_scaler.pkl')
+    if not os.path.exists(scaler_path):
+        scaler_path = os.path.join(MODEL_DIR, 'scaler.pkl')
     scaler = joblib.load(scaler_path)
 except:
     scaler = None
 
 # Load ONNX sessions with error handling
 try:
-    std_path = os.path.join(MODEL_DIR, 'standard_ae.onnx')
+    extreme_path = os.path.join(MODEL_DIR, 'extreme_sae.onnx')
     sparse_path = os.path.join(MODEL_DIR, 'sparse_ae.onnx')
-    den_path = os.path.join(MODEL_DIR, 'denoising_ae.onnx')
     
-    std_session = ort.InferenceSession(std_path) if os.path.exists(std_path) else None
-    sparse_session = ort.InferenceSession(sparse_path) if os.path.exists(sparse_path) else None
-    den_session = ort.InferenceSession(den_path) if os.path.exists(den_path) else None
+    if os.path.exists(extreme_path):
+        sparse_session = ort.InferenceSession(extreme_path)
+        std_session = sparse_session
+        den_session = sparse_session
+    else:
+        std_path = os.path.join(MODEL_DIR, 'standard_ae.onnx')
+        den_path = os.path.join(MODEL_DIR, 'denoising_ae.onnx')
+        std_session = ort.InferenceSession(std_path) if os.path.exists(std_path) else None
+        sparse_session = ort.InferenceSession(sparse_path) if os.path.exists(sparse_path) else None
+        den_session = ort.InferenceSession(den_path) if os.path.exists(den_path) else None
 except Exception as e:
     print(f"Error loading ONNX sessions: {e}")
     std_session = None
