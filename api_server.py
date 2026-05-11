@@ -11,9 +11,9 @@ import torch
 import torch.nn as nn
 from typing import List, Optional
 from fraud_detector_engine import (
-    SparseAutoencoder, get_shap_values, 
-    DATA_PATH, SCALER_PATH, SPARSE_ONNX_PATH, SPARSE_MODEL_PATH,
-    ENSEMBLE_METADATA_PATH
+    StandardAutoencoder, SparseAutoencoder, DenoisingAutoencoder, get_shap_values, 
+    DATA_PATH, SCALER_PATH, STANDARD_ONNX_PATH, SPARSE_ONNX_PATH, DENOISING_ONNX_PATH,
+    STANDARD_MODEL_PATH, SPARSE_MODEL_PATH, DENOISING_MODEL_PATH, ENSEMBLE_METADATA_PATH
 )
 import json
 
@@ -79,9 +79,9 @@ async def benchmark_models():
     real_samples = df_full.sample(min(200, len(df_full)))[features_list].values
     
     model_configs = {
-        'standard':  (SparseAutoencoder, SPARSE_MODEL_PATH),
+        'standard':  (StandardAutoencoder, STANDARD_MODEL_PATH),
         'sparse':    (SparseAutoencoder, SPARSE_MODEL_PATH),
-        'denoising': (SparseAutoencoder, SPARSE_MODEL_PATH),
+        'denoising': (DenoisingAutoencoder, DENOISING_MODEL_PATH),
     }
     
     for m_type, (ModelClass, model_path) in model_configs.items():

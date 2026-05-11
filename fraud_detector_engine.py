@@ -68,60 +68,17 @@ class ExtremeAutoencoder(nn.Module):
             return reconstructed, latent
         return reconstructed
 
-class SparseAutoencoder(nn.Module):
+class SparseAutoencoder(ExtremeAutoencoder):
     def __init__(self, input_dim):
-        super(SparseAutoencoder, self).__init__()
-        self.encoder = nn.Sequential(
-            nn.Linear(input_dim, 128),
-            nn.BatchNorm1d(128),
-            nn.Mish(),
-            nn.Dropout(0.1),
-            nn.Linear(128, 64),
-            nn.BatchNorm1d(64),
-            nn.Mish(),
-            nn.Linear(64, 32)
-        )
-        self.decoder = nn.Sequential(
-            nn.Linear(32, 64),
-            nn.BatchNorm1d(64),
-            nn.Mish(),
-            nn.Linear(64, 128),
-            nn.BatchNorm1d(128),
-            nn.Mish(),
-            nn.Linear(128, input_dim)
-        )
+        super().__init__(input_dim, is_sparse=True)
 
-    def forward(self, x):
-        latent = self.encoder(x)
-        reconstructed = self.decoder(latent)
-        return reconstructed, latent
-
-class DenoisingAutoencoder(nn.Module):
+class DenoisingAutoencoder(ExtremeAutoencoder):
     def __init__(self, input_dim):
-        super(DenoisingAutoencoder, self).__init__()
-        self.encoder = nn.Sequential(
-            nn.Linear(input_dim, 64),
-            nn.BatchNorm1d(64),
-            nn.LeakyReLU(0.1),
-            nn.Linear(64, 32),
-            nn.BatchNorm1d(32),
-            nn.LeakyReLU(0.1),
-            nn.Linear(32, 16)
-        )
-        self.decoder = nn.Sequential(
-            nn.Linear(16, 32),
-            nn.BatchNorm1d(32),
-            nn.LeakyReLU(0.1),
-            nn.Linear(32, 64),
-            nn.BatchNorm1d(64),
-            nn.LeakyReLU(0.1),
-            nn.Linear(64, input_dim)
-        )
+        super().__init__(input_dim, is_sparse=False)
 
-    def forward(self, x):
-        encoded = self.encoder(x)
-        decoded = self.decoder(encoded)
-        return decoded
+class StandardAutoencoder(ExtremeAutoencoder):
+    def __init__(self, input_dim):
+        super().__init__(input_dim, is_sparse=False)
 
 class VariationalAutoencoder(nn.Module):
     def __init__(self, input_dim):

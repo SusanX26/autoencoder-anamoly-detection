@@ -12,7 +12,7 @@ if not os.path.exists(MODEL_DIR):
 
 # Load Scaler
 try:
-    scaler_path = os.path.join(MODEL_DIR, 'power_scaler.pkl')
+    scaler_path = os.path.join(MODEL_DIR, 'fast_scaler.pkl')
     if not os.path.exists(scaler_path):
         scaler_path = os.path.join(MODEL_DIR, 'scaler.pkl')
     scaler = joblib.load(scaler_path)
@@ -21,19 +21,18 @@ except:
 
 # Load ONNX sessions with error handling
 try:
-    extreme_path = os.path.join(MODEL_DIR, 'extreme_sae.onnx')
+    std_path = os.path.join(MODEL_DIR, 'standard_ae.onnx')
     sparse_path = os.path.join(MODEL_DIR, 'sparse_ae.onnx')
+    den_path = os.path.join(MODEL_DIR, 'denoising_ae.onnx')
     
-    if os.path.exists(extreme_path):
-        sparse_session = ort.InferenceSession(extreme_path)
-        std_session = sparse_session
-        den_session = sparse_session
-    else:
-        std_path = os.path.join(MODEL_DIR, 'standard_ae.onnx')
-        den_path = os.path.join(MODEL_DIR, 'denoising_ae.onnx')
-        std_session = ort.InferenceSession(std_path) if os.path.exists(std_path) else None
-        sparse_session = ort.InferenceSession(sparse_path) if os.path.exists(sparse_path) else None
-        den_session = ort.InferenceSession(den_path) if os.path.exists(den_path) else None
+    std_session = ort.InferenceSession(std_path) if os.path.exists(std_path) else None
+    sparse_session = ort.InferenceSession(sparse_path) if os.path.exists(sparse_path) else None
+    den_session = ort.InferenceSession(den_path) if os.path.exists(den_path) else None
+    
+    # Fallback if specific ones are missing
+    if sparse_session and std_session is None: std_session = sparse_session
+    if sparse_session and den_session is None: den_session = sparse_session
+    
 except Exception as e:
     print(f"Error loading ONNX sessions: {e}")
     std_session = None
