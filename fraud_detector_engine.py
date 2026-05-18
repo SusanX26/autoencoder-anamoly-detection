@@ -334,6 +334,7 @@ def get_shap_values(sample_data, model_type='standard'):
     X = df.drop(['Class'], axis=1)
     if 'id' in X.columns: X = X.drop(['id'], axis=1)
     if 'Time' in X.columns: X = X.drop(['Time'], axis=1)
+    if 'Amount' in X.columns: X['Amount'] = np.log1p(X['Amount'])
     
     scaler = joblib.load(SCALER_PATH)
     X_scaled = scaler.transform(X)

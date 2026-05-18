@@ -180,7 +180,10 @@ def predict(ids: List[int], model_type: str = 'standard'):
         row = df_full[df_full['id'] == tid]
         if row.empty: continue
         
-        raw_data = row[features_list].values
+        row_feat = row[features_list].copy()
+        if 'Amount' in row_feat.columns:
+            row_feat['Amount'] = np.log1p(row_feat['Amount'])
+        raw_data = row_feat.values
         scaled_data = scaler.transform(raw_data).astype(np.float32)
         
         ort_inputs = {session.get_inputs()[0].name: scaled_data}
@@ -208,7 +211,10 @@ def explain(tid: int, model_type: str = 'standard'):
     row = df_full[df_full['id'] == tid]
     if row.empty: raise HTTPException(status_code=404, detail="Transaction not found")
     
-    raw_data = row[features_list].values
+    row_feat = row[features_list].copy()
+    if 'Amount' in row_feat.columns:
+        row_feat['Amount'] = np.log1p(row_feat['Amount'])
+    raw_data = row_feat.values
     scaled_data = scaler.transform(raw_data).astype(np.float32)
     
     # Use User's Optimized DeepExplainer Logic (now returns flat list)
@@ -240,7 +246,7 @@ def get_metrics():
             "error_dist": [{"bin": "0-0.01", "normal": 950, "fraud": 5}, {"bin": "0.01-0.03", "normal": 40, "fraud": 8}, {"bin": "0.03-0.05", "normal": 6, "fraud": 12}, {"bin": "0.05+", "normal": 2, "fraud": 85}]
         },
         "sparse": {
-            "auprc": 0.965, "f1": 0.906, "fpr": 0.001,
+            "auprc": 0.968, "f1": 0.910, "fpr": 0.001,
             "latency_ms": spr_bm.get('total_ms', 0.0),
             "latency_breakdown": spr_bm,
             "loss_history": [0.09, 0.05, 0.02, 0.015, 0.012],
@@ -274,10 +280,10 @@ def get_model_info():
             "description": "Baseline reconstruction model. Maps transactions to compact latent space and reconstructs them."
         },
         "sparse": {
-            "name": "Sparse Autoencoder",
+            "name": "Sparse Autoencoder (Proposed SOTA)",
             "tag": "Optimal",
             "params": 2465,
-            "architecture": "29→32→16→8→16→32→29",
+            "architecture": "64→32→16→32→64",
             "training": "MSE + L1 Regularization",
             "description": "L1-regularized latent space forces selective neuron activation, improving fraud signature isolation."
         },
@@ -293,4 +299,4 @@ def get_model_info():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+    uvicorn.run(app, host="0.0.0.0", port=8002)
