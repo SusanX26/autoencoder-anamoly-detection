@@ -175,7 +175,7 @@ def predict(ids: List[int], model_type: str = 'standard'):
             "score": float(mse),
             "is_fraud": is_fraud,
             "original_class": int(row['Class'].values[0]),
-            "latency": bm.get('total_ms', 0.0)
+            "latency": bm.get('inference_ms', 0.0)
         })
     return results
 
@@ -212,7 +212,7 @@ def get_metrics():
     return {
         "standard": {
             "auprc": 0.88, "f1": 0.82, "fpr": 0.008,
-            "latency_ms": std_bm.get('total_ms', 0.0),
+            "latency_ms": std_bm.get('inference_ms', 0.0),
             "latency_breakdown": std_bm,
             "loss_history": [0.08, 0.04, 0.02, 0.012, 0.01],
             "feature_importance": [{"feature": "V17", "importance": 0.8}, {"feature": "V14", "importance": 0.7}, {"feature": "V12", "importance": 0.65}, {"feature": "V10", "importance": 0.55}, {"feature": "V3", "importance": 0.45}],
@@ -220,7 +220,7 @@ def get_metrics():
         },
         "sparse": {
             "auprc": 0.968, "f1": 0.910, "fpr": 0.001,
-            "latency_ms": spr_bm.get('total_ms', 0.0),
+            "latency_ms": spr_bm.get('inference_ms', 0.0),
             "latency_breakdown": spr_bm,
             "loss_history": [0.09, 0.05, 0.02, 0.015, 0.012],
             "feature_importance": [{"feature": "V17", "importance": 0.98}, {"feature": "V14", "importance": 0.95}, {"feature": "V12", "importance": 0.88}, {"feature": "V10", "importance": 0.72}, {"feature": "V3", "importance": 0.61}],
@@ -228,7 +228,7 @@ def get_metrics():
         },
         "denoising": {
             "auprc": 0.92, "f1": 0.88, "fpr": 0.005,
-            "latency_ms": den_bm.get('total_ms', 0.0),
+            "latency_ms": den_bm.get('inference_ms', 0.0),
             "latency_breakdown": den_bm,
             "loss_history": [0.08, 0.04, 0.025, 0.018, 0.014],
             "feature_importance": [{"feature": "V17", "importance": 0.82}, {"feature": "V12", "importance": 0.75}, {"feature": "V14", "importance": 0.70}, {"feature": "V10", "importance": 0.58}, {"feature": "V3", "importance": 0.48}],
