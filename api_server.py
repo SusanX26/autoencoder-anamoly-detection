@@ -78,46 +78,20 @@ async def benchmark_models():
     input_dim = len(features_list)
     real_samples = df_full.sample(min(200, len(df_full)))[features_list].values
     
-    model_configs = {
-        'standard':  (StandardAutoencoder, STANDARD_MODEL_PATH),
-        'sparse':    (SparseAutoencoder, SPARSE_MODEL_PATH),
-        'denoising': (DenoisingAutoencoder, DENOISING_MODEL_PATH),
-    }
-    
-    for m_type, (ModelClass, model_path) in model_configs.items():
-        model = ModelClass(input_dim)
-        model.load_state_dict(torch.load(model_path, map_location='cpu'))
-        model.eval()
-        
-        # Use inference-only wrapper for all slots since they all use the new Sparse architecture
-        class SparseInferenceWrapper(nn.Module):
-            def __init__(self, m):
-                super().__init__()
-                self.m = m
-            def forward(self, x):
-                res = self.m(x)
-                if isinstance(res, tuple):
-                    return res[0]
-                return res
-        
-        inference_model = SparseInferenceWrapper(model)
-        inference_model.eval()
-        # JIT trace for genuine optimization
-        dummy = torch.FloatTensor(scaler.transform(real_samples[0:1]).astype(np.float32))
-        inference_model = torch.jit.trace(inference_model, dummy)
-        
-        # Warmup (10 passes to stabilize CPU caches + JIT)
+    for m_type, session in sessions.items():
+        # Warmup (10 passes to stabilize CPU caches)
         for i in range(10):
             s = real_samples[i:i+1]
             sc = scaler.transform(s).astype(np.float32)
-            with torch.no_grad():
-                t = torch.FloatTensor(sc)
-                r = inference_model(t)
-                _ = torch.mean((r - t)**2).item()
+            ort_inputs = {session.get_inputs()[0].name: sc}
+            r = session.run(None, ort_inputs)[0]
+            _ = np.mean((r - sc)**2)
         
         # Measure per-step latencies over 50 real transactions
         pre_lats, inf_lats, post_lats, total_lats = [], [], [], []
         num_samples = min(50, len(real_samples))
+        
+        input_name = session.get_inputs()[0].name
         
         for i in range(num_samples):
             sample = real_samples[i:i+1]
@@ -125,16 +99,15 @@ async def benchmark_models():
             # ── Step 1: Preprocess ──
             t0 = time.perf_counter_ns()
             scaled = scaler.transform(sample).astype(np.float32)
-            tensor_input = torch.FloatTensor(scaled)
             t1 = time.perf_counter_ns()
             
-            # ── Step 2: Inference ──
-            with torch.no_grad():
-                reconstructed = inference_model(tensor_input)
+            # ── Step 2: Inference (ONNX) ──
+            ort_inputs = {input_name: scaled}
+            reconstructed = session.run(None, ort_inputs)[0]
             t2 = time.perf_counter_ns()
             
             # ── Step 3: Postprocess ──
-            mse = torch.mean((reconstructed - tensor_input)**2).item()
+            mse = np.mean((reconstructed - scaled)**2)
             is_anomaly = mse > 0.05
             t3 = time.perf_counter_ns()
             
