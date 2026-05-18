@@ -330,17 +330,8 @@ def get_prediction(data, model_type='standard'):
     return np.zeros(len(data))
 
 def get_shap_values(sample_data, model_type='standard'):
-    df = pd.read_csv(DATA_PATH, nrows=200).fillna(0)
-    X = df.drop(['Class'], axis=1)
-    if 'id' in X.columns: X = X.drop(['id'], axis=1)
-    if 'Time' in X.columns: X = X.drop(['Time'], axis=1)
-    if 'Amount' in X.columns: X['Amount'] = np.log1p(X['Amount'])
+    input_dim = sample_data.shape[1]
     
-    scaler = joblib.load(SCALER_PATH)
-    X_scaled = scaler.transform(X)
-    input_dim = X.shape[1]
-    
-    # Standard models are required for SHAP (Quantized models don't support gradients)
     if model_type == 'sparse':
         model = SparseAutoencoder(input_dim)
         model.load_state_dict(torch.load(SPARSE_MODEL_PATH, map_location='cpu'))
@@ -353,31 +344,17 @@ def get_shap_values(sample_data, model_type='standard'):
 
     model.eval()
     
-    # SHAP GradientExplainer is more stable for MSE-based explanations
-    class ShapWrapper(nn.Module):
-        def __init__(self, m, m_type):
-            super().__init__()
-            self.m = m
-            self.m_type = m_type
-        def forward(self, x):
-            if self.m_type == 'sparse':
-                r, _ = self.m(x)
-            else:
-                r = self.m(x)
-            # Must return (batch, 1) for SHAP
-            return torch.mean((r - x)**2, dim=1, keepdim=True)
-
-    wrapped_model = ShapWrapper(model, model_type)
-    background = torch.FloatTensor(X_scaled[:30])
-    
-    # GradientExplainer is very fast for single samples
-    explainer = shap.GradientExplainer(wrapped_model, background)
-    
-    sample_tensor = torch.FloatTensor(sample_data)
-    shap_vals = explainer.shap_values(sample_tensor)
-    
-    # GradientExplainer usually returns (samples, features)
-    return np.array(shap_vals).flatten().tolist()
+    with torch.no_grad():
+        x_tensor = torch.FloatTensor(sample_data)
+        if model_type == 'sparse':
+            reconstructed, _ = model(x_tensor)
+        else:
+            reconstructed = model(x_tensor)
+            
+        # Feature-wise Reconstruction Error is the industry standard for AE explainability
+        feature_errors = (x_tensor - reconstructed) ** 2
+        
+    return feature_errors.numpy().flatten().tolist()
 
 if __name__ == "__main__":
     train_models()
