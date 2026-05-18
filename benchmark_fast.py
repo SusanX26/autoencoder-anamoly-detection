@@ -5,11 +5,16 @@ import onnxruntime as ort
 import os
 
 def benchmark_fast():
-    MODEL_DIR = 'models_optimized'
-    onnx_path = os.path.join(MODEL_DIR, 'extreme_sae.onnx')
+    onnx_path = os.path.join('models', 'sparse_ae.onnx')
+    if not os.path.exists(onnx_path):
+        print("Model not found. Run training/export first.")
+        return
 
-    # Load ONNX
-    session = ort.InferenceSession(onnx_path)
+    # Load ONNX with Max Optimizations
+    opts = ort.SessionOptions()
+    opts.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
+    opts.intra_op_num_threads = 1
+    session = ort.InferenceSession(onnx_path, opts)
     
     # Fast Scaler (StandardScaler)
     scaler = StandardScaler()

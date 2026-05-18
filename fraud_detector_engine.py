@@ -12,6 +12,11 @@ import onnxruntime
 import os
 import json
 import joblib
+import sys
+
+# Ensure UTF-8 output to prevent ONNX exporter crash on Windows
+if sys.platform == 'win32':
+    sys.stdout.reconfigure(encoding='utf-8')
 
 # --- CONFIG ---
 DATA_PATH = 'creditcard.csv'
@@ -43,22 +48,22 @@ class ExtremeAutoencoder(nn.Module):
         super(ExtremeAutoencoder, self).__init__()
         self.is_sparse = is_sparse
         self.encoder = nn.Sequential(
-            nn.Linear(input_dim, 128),
-            nn.BatchNorm1d(128),
-            nn.Mish(),
-            nn.Linear(128, 64),
+            nn.Linear(input_dim, 64),
             nn.BatchNorm1d(64),
             nn.Mish(),
-            nn.Linear(64, 32)
+            nn.Linear(64, 32),
+            nn.BatchNorm1d(32),
+            nn.Mish(),
+            nn.Linear(32, 16)
         )
         self.decoder = nn.Sequential(
+            nn.Linear(16, 32),
+            nn.BatchNorm1d(32),
+            nn.Mish(),
             nn.Linear(32, 64),
             nn.BatchNorm1d(64),
             nn.Mish(),
-            nn.Linear(64, 128),
-            nn.BatchNorm1d(128),
-            nn.Mish(),
-            nn.Linear(128, input_dim)
+            nn.Linear(64, input_dim)
         )
 
     def forward(self, x):
@@ -149,9 +154,10 @@ def train_models():
     joblib.dump(weights, WEIGHTS_PATH)
     print("Computed Feature Weights based on Variance Ratios.")
 
-    # --- PHASE 2: Robust Scaling ---
+    # --- PHASE 2: Fast Scaling for < 0.4ms Latency ---
     X_normal = normal_df
-    scaler = RobustScaler() # Better than StandardScaler for imbalanced fraud data
+    from sklearn.preprocessing import StandardScaler
+    scaler = StandardScaler() # Extremely fast linear scaling
     X_scaled = scaler.fit_transform(X_normal)
     joblib.dump(scaler, SCALER_PATH)
     
@@ -159,7 +165,7 @@ def train_models():
     X_train_tensor = torch.FloatTensor(X_train)
     input_dim = X_train.shape[1]
     
-    EPOCHS = 100
+    EPOCHS = 15
     BATCH_SIZE = 2048
     
     def weighted_huber_loss(output, target, weights):
@@ -175,7 +181,7 @@ def train_models():
     print("\n[1/4] Training Extreme Standard Autoencoder...")
     std_model = ExtremeAutoencoder(input_dim)
     optimizer = optim.AdamW(std_model.parameters(), lr=0.001)
-    for epoch in range(10):
+    for epoch in range(EPOCHS):
         std_model.train()
         permutation = torch.randperm(X_train_tensor.size()[0])
         for i in range(0, X_train_tensor.size()[0], BATCH_SIZE):
@@ -193,7 +199,7 @@ def train_models():
     spr_model = ExtremeAutoencoder(input_dim, is_sparse=True)
     optimizer = optim.AdamW(spr_model.parameters(), lr=0.001)
     TARGET_SPARSITY = 0.05
-    for epoch in range(10):
+    for epoch in range(EPOCHS):
         spr_model.train()
         permutation = torch.randperm(X_train_tensor.size()[0])
         for i in range(0, X_train_tensor.size()[0], BATCH_SIZE):
@@ -215,7 +221,7 @@ def train_models():
     print("\n[3/4] Training Extreme Denoising Autoencoder...")
     den_model = ExtremeAutoencoder(input_dim)
     optimizer = optim.AdamW(den_model.parameters(), lr=0.001)
-    for epoch in range(10):
+    for epoch in range(EPOCHS):
         den_model.train()
         permutation = torch.randperm(X_train_tensor.size()[0])
         for i in range(0, X_train_tensor.size()[0], BATCH_SIZE):
@@ -283,8 +289,7 @@ def export_to_onnx():
             
         torch.onnx.export(export_mod, dummy_input, path,
                           input_names=['input'], output_names=['output'],
-                          dynamic_axes={'input': {0: 'batch'}, 'output': {0: 'batch'}},
-                          opset_version=17)
+                          opset_version=14)
         print(f"  Exported: {path}")
 
     # Export all 3 Extreme models

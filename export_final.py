@@ -3,7 +3,7 @@ import torch.nn as nn
 import os
 import sys
 
-# Set encoding for Windows console
+# Ensure UTF-8 output
 if sys.platform == 'win32':
     sys.stdout.reconfigure(encoding='utf-8')
 
@@ -12,22 +12,22 @@ class ExtremeAutoencoder(nn.Module):
         super(ExtremeAutoencoder, self).__init__()
         self.is_sparse = is_sparse
         self.encoder = nn.Sequential(
-            nn.Linear(input_dim, 128),
-            nn.BatchNorm1d(128),
-            nn.Mish(),
-            nn.Linear(128, 64),
+            nn.Linear(input_dim, 64),
             nn.BatchNorm1d(64),
             nn.Mish(),
-            nn.Linear(64, 32)
+            nn.Linear(64, 32),
+            nn.BatchNorm1d(32),
+            nn.Mish(),
+            nn.Linear(32, 16)
         )
         self.decoder = nn.Sequential(
+            nn.Linear(16, 32),
+            nn.BatchNorm1d(32),
+            nn.Mish(),
             nn.Linear(32, 64),
             nn.BatchNorm1d(64),
             nn.Mish(),
-            nn.Linear(64, 128),
-            nn.BatchNorm1d(128),
-            nn.Mish(),
-            nn.Linear(128, input_dim)
+            nn.Linear(64, input_dim)
         )
 
     def forward(self, x):
@@ -38,7 +38,9 @@ class ExtremeAutoencoder(nn.Module):
         return reconstructed
 
 def export_all():
-    MODEL_DIR = 'models_optimized'
+    # Use absolute paths to prevent Windows ONNX external data OSError
+    BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+    MODEL_DIR = os.path.join(BASE_DIR, 'models')
     input_dim = 29
     dummy_input = torch.randn(1, input_dim)
     
@@ -67,9 +69,17 @@ def export_all():
         model.load_state_dict(torch.load(pth_path, map_location='cpu'))
         model.eval()
         
-        torch.onnx.export(W(model, s=is_spr), dummy_input, onnx_path,
+        import io
+        buffer = io.BytesIO()
+        
+        # Turn off external data by forcing small opset and no dynamic axes
+        torch.onnx.export(W(model, s=is_spr), dummy_input, buffer,
                           input_names=['input'], output_names=['output'],
-                          opset_version=12)
+                          opset_version=14)
+                          
+        with open(onnx_path, 'wb') as f:
+            f.write(buffer.getvalue())
+            
         print(f"Success: {onnx_name}")
 
 if __name__ == "__main__":
