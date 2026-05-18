@@ -43,10 +43,67 @@ SCALER_PATH = os.path.join(MODEL_DIR, 'fast_scaler.pkl') # Switching back to fas
 
 # --- MODELS ---
 
-class ExtremeAutoencoder(nn.Module):
-    def __init__(self, input_dim, is_sparse=False):
-        super(ExtremeAutoencoder, self).__init__()
-        self.is_sparse = is_sparse
+class StandardAutoencoder(nn.Module):
+    def __init__(self, input_dim):
+        super().__init__()
+        # Baseline dense architecture
+        self.encoder = nn.Sequential(
+            nn.Linear(input_dim, 128),
+            nn.ReLU(),
+            nn.Linear(128, 64),
+            nn.ReLU(),
+            nn.Linear(64, 32)
+        )
+        self.decoder = nn.Sequential(
+            nn.Linear(32, 64),
+            nn.ReLU(),
+            nn.Linear(64, 128),
+            nn.ReLU(),
+            nn.Linear(128, input_dim)
+        )
+    def forward(self, x):
+        return self.decoder(self.encoder(x))
+
+class DenoisingAutoencoder(nn.Module):
+    def __init__(self, input_dim):
+        super().__init__()
+        self.dropout = nn.Dropout(0.2)
+        self.encoder = nn.Sequential(
+            nn.Linear(input_dim, 64),
+            nn.Mish(),
+            nn.Linear(64, 32),
+            nn.Mish(),
+            nn.Linear(32, 16)
+        )
+        self.decoder = nn.Sequential(
+            nn.Linear(16, 32),
+            nn.Mish(),
+            nn.Linear(32, 64),
+            nn.Mish(),
+            nn.Linear(64, input_dim)
+        )
+    def forward(self, x):
+        x_noisy = self.dropout(x)
+        return self.decoder(self.encoder(x_noisy))
+
+class SEBlock(nn.Module):
+    def __init__(self, channels, reduction=4):
+        super().__init__()
+        self.fc1 = nn.Linear(channels, channels // reduction, bias=False)
+        self.relu = nn.ReLU()
+        self.fc2 = nn.Linear(channels // reduction, channels, bias=False)
+        self.sigmoid = nn.Sigmoid()
+        
+    def forward(self, x):
+        scale = self.fc1(x)
+        scale = self.relu(scale)
+        scale = self.fc2(scale)
+        scale = self.sigmoid(scale)
+        return x * scale
+
+class SparseAutoencoder(nn.Module):
+    def __init__(self, input_dim):
+        super().__init__()
         self.encoder = nn.Sequential(
             nn.Linear(input_dim, 64),
             nn.BatchNorm1d(64),
@@ -56,6 +113,7 @@ class ExtremeAutoencoder(nn.Module):
             nn.Mish(),
             nn.Linear(32, 16)
         )
+        self.attention = SEBlock(16)
         self.decoder = nn.Sequential(
             nn.Linear(16, 32),
             nn.BatchNorm1d(32),
@@ -65,25 +123,11 @@ class ExtremeAutoencoder(nn.Module):
             nn.Mish(),
             nn.Linear(64, input_dim)
         )
-
     def forward(self, x):
         latent = self.encoder(x)
-        reconstructed = self.decoder(latent)
-        if self.is_sparse:
-            return reconstructed, latent
-        return reconstructed
-
-class SparseAutoencoder(ExtremeAutoencoder):
-    def __init__(self, input_dim):
-        super().__init__(input_dim, is_sparse=True)
-
-class DenoisingAutoencoder(ExtremeAutoencoder):
-    def __init__(self, input_dim):
-        super().__init__(input_dim, is_sparse=False)
-
-class StandardAutoencoder(ExtremeAutoencoder):
-    def __init__(self, input_dim):
-        super().__init__(input_dim, is_sparse=False)
+        latent_attended = self.attention(latent)
+        reconstructed = self.decoder(latent_attended)
+        return reconstructed, latent_attended
 
 class VariationalAutoencoder(nn.Module):
     def __init__(self, input_dim):
@@ -178,8 +222,8 @@ def train_models():
         return torch.mean(base_loss * weights)
 
     # --- MODEL 1: Standard AE (Baseline) ---
-    print("\n[1/4] Training Extreme Standard Autoencoder...")
-    std_model = ExtremeAutoencoder(input_dim)
+    print("\n[1/4] Training Standard Autoencoder...")
+    std_model = StandardAutoencoder(input_dim)
     optimizer = optim.AdamW(std_model.parameters(), lr=0.001)
     for epoch in range(EPOCHS):
         std_model.train()
@@ -195,8 +239,8 @@ def train_models():
     torch.save(std_model.state_dict(), STANDARD_MODEL_PATH)
 
     # --- MODEL 2: Sparse AE (Optimized) ---
-    print("\n[2/4] Training Extreme Sparse Autoencoder...")
-    spr_model = ExtremeAutoencoder(input_dim, is_sparse=True)
+    print("\n[2/4] Training Sparse Autoencoder...")
+    spr_model = SparseAutoencoder(input_dim)
     optimizer = optim.AdamW(spr_model.parameters(), lr=0.001)
     TARGET_SPARSITY = 0.05
     for epoch in range(EPOCHS):
@@ -218,8 +262,8 @@ def train_models():
     torch.save(spr_model.state_dict(), SPARSE_MODEL_PATH)
 
     # --- MODEL 3: Denoising AE (Robust) ---
-    print("\n[3/4] Training Extreme Denoising Autoencoder...")
-    den_model = ExtremeAutoencoder(input_dim)
+    print("\n[3/4] Training Denoising Autoencoder...")
+    den_model = DenoisingAutoencoder(input_dim)
     optimizer = optim.AdamW(den_model.parameters(), lr=0.001)
     for epoch in range(EPOCHS):
         den_model.train()
@@ -292,16 +336,16 @@ def export_to_onnx():
                           opset_version=14)
         print(f"  Exported: {path}")
 
-    # Export all 3 Extreme models
-    std = ExtremeAutoencoder(input_dim)
+    # Export all 3 distinct models
+    std = StandardAutoencoder(input_dim)
     std.load_state_dict(torch.load(STANDARD_MODEL_PATH))
     run_export(std, STANDARD_ONNX_PATH)
     
-    spr = ExtremeAutoencoder(input_dim, is_sparse=True)
+    spr = SparseAutoencoder(input_dim)
     spr.load_state_dict(torch.load(SPARSE_MODEL_PATH))
     run_export(spr, SPARSE_ONNX_PATH, is_sparse=True)
     
-    den = ExtremeAutoencoder(input_dim)
+    den = DenoisingAutoencoder(input_dim)
     den.load_state_dict(torch.load(DENOISING_MODEL_PATH))
     run_export(den, DENOISING_ONNX_PATH)
     
