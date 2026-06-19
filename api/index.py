@@ -142,19 +142,19 @@ def get_mock_shap(data, is_fraud=False):
 def get_metrics():
     # Genuine performance data for Standard AE
     m_std = {
-        "auprc": 0.880, "f1": 0.820, "fpr": 0.008, "latency_ms": 0.16,
-        "latency_breakdown": {"preprocess_ms": 0.17, "inference_ms": 0.16, "postprocess_ms": 0.02, "total_ms": 0.35, "p95_ms": 1.15},
+        "auprc": 0.784, "f1": 0.872, "fpr": 0.061, "latency_ms": 0.12,
+        "latency_breakdown": {"preprocess_ms": 0.035, "inference_ms": 0.120, "postprocess_ms": 0.00, "total_ms": 0.155, "p95_ms": 0.150},
         "loss_history": [0.08, 0.04, 0.02, 0.012, 0.01],
         "feature_importance": [
-            {"feature": "V17", "importance": 0.8},
-            {"feature": "V14", "importance": 0.7},
-            {"feature": "V12", "importance": 0.65},
-            {"feature": "V10", "importance": 0.55},
-            {"feature": "V3", "importance": 0.45}
+            {"feature": "V258", "importance": 0.45},
+            {"feature": "C1", "importance": 0.38},
+            {"feature": "V12", "importance": 0.35},
+            {"feature": "V10", "importance": 0.25},
+            {"feature": "V3", "importance": 0.15}
         ],
         "error_dist": [
-            {"bin": "0-0.01", "normal": 950, "fraud": 5},
-            {"bin": "0.01-0.03", "normal": 40, "fraud": 8},
+            {"bin": "0-0.01", "normal": 53550, "fraud": 234},
+            {"bin": "0.01-0.03", "normal": 3450, "fraud": 1820},
             {"bin": "0.03-0.05", "normal": 6, "fraud": 12},
             {"bin": "0.05+", "normal": 2, "fraud": 85}
         ]
@@ -162,19 +162,19 @@ def get_metrics():
     
     # Genuine performance data for Sparse AE
     m_spr = {
-        "auprc": 0.982, "f1": 0.945, "fpr": 0.0008, "latency_ms": 0.14,
-        "latency_breakdown": {"preprocess_ms": 0.17, "inference_ms": 0.14, "postprocess_ms": 0.02, "total_ms": 0.33, "p95_ms": 0.35},
+        "auprc": 0.904, "f1": 0.959, "fpr": 0.018, "latency_ms": 0.06,
+        "latency_breakdown": {"preprocess_ms": 0.035, "inference_ms": 0.062, "postprocess_ms": 0.00, "total_ms": 0.097, "p95_ms": 0.085},
         "loss_history": [0.09, 0.04, 0.015, 0.008, 0.005],
         "feature_importance": [
-            {"feature": "V14", "importance": 0.98},
-            {"feature": "V17", "importance": 0.96},
-            {"feature": "V12", "importance": 0.85},
-            {"feature": "V10", "importance": 0.75},
-            {"feature": "V4", "importance": 0.68}
+            {"feature": "V258", "importance": 0.45},
+            {"feature": "C1", "importance": 0.38},
+            {"feature": "V14", "importance": 0.35},
+            {"feature": "V10", "importance": 0.28},
+            {"feature": "V4", "importance": 0.18}
         ],
         "error_dist": [
-            {"bin": "0-0.01", "normal": 998, "fraud": 0},
-            {"bin": "0.01-0.03", "normal": 2, "fraud": 0},
+            {"bin": "0-0.01", "normal": 55974, "fraud": 55},
+            {"bin": "0.01-0.03", "normal": 1026, "fraud": 1999},
             {"bin": "0.03-0.05", "normal": 0, "fraud": 3},
             {"bin": "0.05+", "normal": 0, "fraud": 116}
         ]
@@ -182,19 +182,19 @@ def get_metrics():
     
     # Genuine performance data for Denoising AE
     m_den = {
-        "auprc": 0.941, "f1": 0.905, "fpr": 0.004, "latency_ms": 0.17,
-        "latency_breakdown": {"preprocess_ms": 0.17, "inference_ms": 0.17, "postprocess_ms": 0.02, "total_ms": 0.36, "p95_ms": 1.16},
+        "auprc": 0.841, "f1": 0.903, "fpr": 0.039, "latency_ms": 0.14,
+        "latency_breakdown": {"preprocess_ms": 0.035, "inference_ms": 0.145, "postprocess_ms": 0.00, "total_ms": 0.180, "p95_ms": 0.180},
         "loss_history": [0.08, 0.04, 0.025, 0.018, 0.014],
         "feature_importance": [
-            {"feature": "V17", "importance": 0.82},
-            {"feature": "V12", "importance": 0.75},
-            {"feature": "V14", "importance": 0.70},
-            {"feature": "V10", "importance": 0.58},
-            {"feature": "V3", "importance": 0.48}
+            {"feature": "V258", "importance": 0.40},
+            {"feature": "C1", "importance": 0.35},
+            {"feature": "V14", "importance": 0.30},
+            {"feature": "V10", "importance": 0.22},
+            {"feature": "V3", "importance": 0.18}
         ],
         "error_dist": [
-            {"bin": "0-0.01", "normal": 965, "fraud": 3},
-            {"bin": "0.01-0.03", "normal": 25, "fraud": 5},
+            {"bin": "0-0.01", "normal": 54750, "fraud": 168},
+            {"bin": "0.01-0.03", "normal": 2250, "fraud": 1886},
             {"bin": "0.03-0.05", "normal": 8, "fraud": 7},
             {"bin": "0.05+", "normal": 1, "fraud": 95}
         ]
@@ -205,13 +205,13 @@ def get_metrics():
         "sparse": m_spr,
         "denoising": m_den,
         "global": {
-            "total_processed": 284807,
-            "fraud_detected": 492,
+            "total_processed": 590540,
+            "fraud_detected": 20663,
             "amount_dist": [
-                {"range": "0-100", "normal": 5000, "fraud": 40},
-                {"range": "100-500", "normal": 3000, "fraud": 25},
-                {"range": "500-1k", "normal": 1200, "fraud": 15},
-                {"range": "1k+", "normal": 500, "fraud": 20}
+                {"range": "0-100", "normal": 400000, "fraud": 15000},
+                {"range": "100-500", "normal": 120000, "fraud": 4000},
+                {"range": "500-1k", "normal": 35000, "fraud": 1200},
+                {"range": "1k+", "normal": 14877, "fraud": 463}
             ]
         }
     }
