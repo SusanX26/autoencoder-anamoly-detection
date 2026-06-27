@@ -5,19 +5,20 @@ import joblib
 import os
 
 # Robust pathing for Vercel
-BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-MODEL_DIR = os.path.join(BASE_DIR, 'models_optimized')
+API_DIR = os.path.dirname(__file__)
+MODEL_DIR = os.path.join(API_DIR, 'models_optimized')
 if not os.path.exists(MODEL_DIR):
-    MODEL_DIR = os.path.join(BASE_DIR, 'models')
+    MODEL_DIR = os.path.join(API_DIR, 'models')
 
-# Load Scaler
+# Load Scaler and Feature Cols
 try:
-    scaler_path = os.path.join(MODEL_DIR, 'fast_scaler.pkl')
-    if not os.path.exists(scaler_path):
-        scaler_path = os.path.join(MODEL_DIR, 'scaler.pkl')
-    scaler = joblib.load(scaler_path)
-except:
-    scaler = None
+    scaler_path = os.path.join(MODEL_DIR, 'scaler_params.pkl')
+    feature_cols_path = os.path.join(MODEL_DIR, 'feature_cols.pkl')
+    mean_val, std_val = joblib.load(scaler_path)
+    features_list = joblib.load(feature_cols_path)
+except Exception as e:
+    print(f"Error loading scaler/features: {e}")
+    mean_val, std_val, features_list = None, None, None
 
 # Load ONNX sessions with error handling
 try:
@@ -48,15 +49,19 @@ def get_onnx_mse(data, model_type='standard'):
         session = std_session
         
     # If ONNX fails on Vercel (due to size limits or C++ bindings), use intelligent fallback based on 'Class' if available
-    if session is None or scaler is None:
+    if session is None or mean_val is None or features_list is None:
         return _intelligent_mock_mse(data)
     
     try:
-        # Prepare features (drop Class if exists)
-        features = data.drop(['Class'], axis=1, errors='ignore')
+        # Prepare features using the exact columns the model expects
+        missing_cols = set(features_list) - set(data.columns)
+        for col in missing_cols:
+            data[col] = 0.0 # Impute missing required columns just in case
+            
+        features = data[features_list].values.astype(np.float32)
         
         # Scale data
-        data_scaled = scaler.transform(features).astype(np.float32)
+        data_scaled = (features - mean_val) / (std_val + 1e-8)
         
         # Run inference
         inputs = {session.get_inputs()[0].name: data_scaled}
