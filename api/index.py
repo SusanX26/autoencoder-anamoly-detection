@@ -30,7 +30,14 @@ DATA_PATH = os.path.join(BASE_DIR, 'data_sample.csv')
 
 def load_data():
     try:
-        return pd.read_csv(DATA_PATH)
+        df = pd.read_csv(DATA_PATH)
+        if 'id' not in df.columns:
+            df['id'] = range(len(df))
+        if 'isFraud' in df.columns:
+            df.rename(columns={'isFraud': 'Class'}, inplace=True)
+        if 'TransactionAmt' in df.columns and 'Amount' not in df.columns:
+            df.rename(columns={'TransactionAmt': 'Amount'}, inplace=True)
+        return df
     except Exception as e:
         print(f"Error loading data: {e}")
         # Return empty df with correct columns as fallback
