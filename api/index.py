@@ -36,7 +36,7 @@ def load_data():
         if 'isFraud' in df.columns:
             df.rename(columns={'isFraud': 'Class'}, inplace=True)
         if 'TransactionAmt' in df.columns and 'Amount' not in df.columns:
-            df.rename(columns={'TransactionAmt': 'Amount'}, inplace=True)
+            df['Amount'] = df['TransactionAmt']
         return df
     except Exception as e:
         print(f"Error loading data: {e}")
