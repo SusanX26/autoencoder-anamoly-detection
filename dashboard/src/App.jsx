@@ -210,8 +210,8 @@ const Dashboard = () => {
           </div>
           <div className="flex items-center space-x-6">
              <div className="text-right">
-               <p className="text-[10px] font-bold text-slate-400 uppercase leading-none mb-1">Imbalance Ratio</p>
-               <p className="text-xs font-black text-indigo-600">0.172% (Critical)</p>
+                 <p className="text-[10px] font-bold text-slate-400 uppercase leading-none mb-1">Imbalance Ratio</p>
+                 <p className="text-xs font-black text-indigo-600">3.50% (High)</p>
              </div>
              <div className="w-12 h-12 rounded-2xl bg-slate-900 flex items-center justify-center text-white font-black text-sm shadow-xl border-2 border-white">
                 S
