@@ -25,8 +25,8 @@ app.add_middleware(
 )
 
 # Robust data pathing
-BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-DATA_PATH = os.path.join(BASE_DIR, 'data_sample.csv')
+API_DIR = os.path.dirname(__file__)
+DATA_PATH = os.path.join(API_DIR, 'data_sample.csv')
 
 def load_data():
     try:
@@ -67,6 +67,24 @@ def get_transactions(limit: int = 12):
     else:
         sample = df.sample(min(limit, len(df))).to_dict('records')
         return sample
+
+@app.get("/debug")
+@app.get("/api/debug")
+def debug_info():
+    try:
+        files = os.listdir(API_DIR)
+        cwd_files = os.listdir(os.getcwd())
+        return {
+            "api_dir": API_DIR,
+            "api_files": files,
+            "cwd": os.getcwd(),
+            "cwd_files": cwd_files,
+            "df_empty": df.empty,
+            "data_path": DATA_PATH,
+            "data_exists": os.path.exists(DATA_PATH)
+        }
+    except Exception as e:
+        return {"error": str(e)}
 
 @app.post("/predict")
 @app.post("/api/predict")
