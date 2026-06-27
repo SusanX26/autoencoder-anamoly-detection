@@ -58,9 +58,4 @@ code screenshots/
 MasterThesis_Figures/
 
 # Ignore generation/training scripts
-calc_metrics.py
-benchmark_3_models.py
-benchmark_latency.py
-fraud_detector_engine.py
-merge_routes.py
-api_server.py
+# (Removed to push to github based on user feedback)
